@@ -6,11 +6,13 @@ Tracks processed files via absorb_state.yaml to enable incremental runs.
 """
 
 import datetime
+import json
 import logging
-import subprocess
 import sys
 from pathlib import Path
 
+import yaml
+from gemini_cli import run_gemini_cli_json
 from state import (
   collect_candidates,
   find_pending,
@@ -25,9 +27,95 @@ _OUTPUT_DIR = Path("03_Wiki")
 _SUPPORTED_EXTENSIONS = [".md"]
 _STATE_FILE = Path(".state/absorb_state.yaml")
 _PROMPT_FILE = Path("Scripts/prompts/absorb.md")
+_PLANNER_PROMPT_FILE = Path("Scripts/prompts/absorb_planner.md")
 
 
-def absorb_file(filepath: Path) -> bool:
+def extract_frontmatter(filepath: Path) -> dict:
+  with open(filepath, "r") as f:
+    content = f.read()
+  if content.startswith("---"):
+    parts = content.split("---", 2)
+    if len(parts) >= 3:
+      try:
+        fm = yaml.safe_load(parts[1])
+        return fm if isinstance(fm, dict) else {}
+      except yaml.YAMLError:
+        pass
+  return {}
+
+
+def plan_groups(pending: list[Path]) -> list[list[Path]]:
+  if not pending:
+    return []
+
+  if not _PLANNER_PROMPT_FILE.exists():
+    print(f"Error: Prompt file {_PLANNER_PROMPT_FILE} not found.", file=sys.stderr)
+    return [[p] for p in pending]
+
+  file_metadata = []
+  for p in pending:
+    fm = extract_frontmatter(p)
+    file_metadata.append(
+      {"filename": p.name, "tags": fm.get("tags", []), "summary": fm.get("summary", "")}
+    )
+
+  with open(_PLANNER_PROMPT_FILE, "r") as f:
+    prompt_content = f.read()
+
+  # Adding JSON format context
+  full_prompt = (
+    f"{prompt_content}\n\n"
+    f"Files to group:\n"
+    f"```json\n"
+    f"{json.dumps(file_metadata, indent=2, ensure_ascii=False)}\n"
+    f"```"
+  )
+
+  print("  Running Planner LLM to group files...", flush=True)
+  try:
+    response = run_gemini_cli_json(full_prompt, auto_edit=False)
+
+    if response.return_code != 0:
+      logging.warning(
+        f"Planner failed (return code {response.return_code}), processing individually.\nSTDERR:\n{response.text}"
+      )
+      return [[p] for p in pending]
+
+    # Standardize output (just in case LLM wraps it in markdown blocks)
+    out_text = response.text.strip()
+    if out_text.startswith("```json"):
+      out_text = out_text[7:]
+    if out_text.startswith("```"):
+      out_text = out_text[3:]
+    if out_text.endswith("```"):
+      out_text = out_text[:-3]
+    out_text = out_text.strip()
+
+    grouped_filenames = json.loads(out_text)
+
+    paths_by_name = {p.name: p for p in pending}
+    groups = []
+    for group in grouped_filenames:
+      group_paths = [
+        paths_by_name[name] for name in group if isinstance(name, str) and name in paths_by_name
+      ]
+      if group_paths:
+        groups.append(group_paths)
+
+    # Catch any missing files just in case
+    grouped_names = {p.name for group in groups for p in group}
+    for p in pending:
+      if p.name not in grouped_names:
+        groups.append([p])
+
+    return groups
+
+  except Exception as e:
+    logging.error(f"Planner error: {e}")
+    return [[p] for p in pending]
+
+
+def absorb_group(filepaths: list[Path]) -> bool:
   if not _PROMPT_FILE.exists():
     print(f"Error: Prompt file {_PROMPT_FILE} not found.", file=sys.stderr)
     return False
@@ -37,47 +125,37 @@ def absorb_file(filepath: Path) -> bool:
 
   today_date = datetime.date.today().isoformat()
 
-  # Read the entry content to provide as context
-  with open(filepath, "r") as f:
-    entry_content = f.read()
+  context_parts = []
+  for filepath in filepaths:
+    with open(filepath, "r") as f:
+      entry_content = f.read()
+    context_parts.append(
+      f"- Raw Entry File: {filepath}\n- Raw Entry Content:\n---\n{entry_content}\n---"
+    )
+
+  combined_context = "\n".join(context_parts)
 
   full_prompt = (
     f"{prompt_content}\n\n"
     f"Context:\n"
     f"- Today's Date: {today_date}\n"
-    f"- Raw Entry File: {filepath}\n"
-    f"- Raw Entry Content:\n---\n{entry_content}\n---\n"
-    f"\nTask: Absorb the information from the above entry into the wiki in {_OUTPUT_DIR}."
+    f"{combined_context}\n"
+    f"\nTask: Absorb the information from the above entries into the wiki in {_OUTPUT_DIR}."
   )
 
-  print(f"  Running LLM absorption for {filepath.name}...", end="", flush=True)
+  names = ", ".join(p.name for p in filepaths)
+  print(f"  Running LLM absorption for [{names}]...", end="", flush=True)
   try:
-    # We use gemini CLI to perform the absorption.
-    # It will have access to the 03_Wiki directory to read/write files.
-    result = subprocess.run(
-      ["gemini", "--approval-mode", "auto_edit", "-p", full_prompt],
-      capture_output=True,
-      text=True,
-      check=False,
-      stdin=subprocess.DEVNULL,
-    )
-    if result.returncode != 0:
-      logging.info(f"Return Code: {result.returncode}")
-      logging.info(f"STDOUT:\n{result.stdout}")
-      logging.info(f"STDERR:\n{result.stderr}")
-    else:
-      logging.debug(f"Return Code: {result.returncode}")
-      logging.debug(f"STDOUT:\n{result.stdout}")
-      logging.debug(f"STDERR:\n{result.stderr}")
+    response = run_gemini_cli_json(full_prompt, auto_edit=True)
   except Exception as e:
     print(f" error running LLM: {e}")
     return False
 
-  if result.returncode == 0:
+  if response.return_code == 0:
     print(" done.")
     return True
   else:
-    print(f" failed (return code {result.returncode}).")
+    print(f" failed (return code {response.return_code}).")
     return False
 
 
@@ -97,24 +175,26 @@ def run() -> dict:
 
   _OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-  processed = {}
-  for filepath in pending:
-    print(f"Absorbing: {filepath}")
-    success = absorb_file(filepath)
+  groups = plan_groups(pending)
 
-    if success:
-      record_success(filepath, state, status="absorbed", date=datetime.date.today().isoformat())
-      processed[filepath.name] = state[filepath.name]
-      print(f"✓ Absorbed: {filepath.name}")
-    else:
-      record_failure(filepath, state)
-      print(f"✗ Failed: {filepath.name}")
+  processed = {}
+  for group in groups:
+    names = ", ".join(p.name for p in group)
+    print(f"Absorbing Group: {names}")
+    success = absorb_group(group)
+
+    for filepath in group:
+      if success:
+        record_success(filepath, state, status="absorbed", date=datetime.date.today().isoformat())
+        processed[filepath.name] = state[filepath.name]
+        print(f"✓ Absorbed: {filepath.name}")
+      else:
+        record_failure(filepath, state)
+        print(f"✗ Failed: {filepath.name}")
 
     # Periodic state saving
-    if len(processed) % 5 == 0:
-      save_state(state, _STATE_FILE)
+    save_state(state, _STATE_FILE)
 
-  save_state(state, _STATE_FILE)
   return processed
 
 

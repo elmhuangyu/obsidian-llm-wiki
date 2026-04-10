@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 import datetime
-import logging
 import re
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
+from gemini_cli import run_gemini_cli_json
 from markitdown import MarkItDown
 
 _MARKITDOWN_EXTENSIONS = [".pdf", ".docx", ".pptx", ".xlsx", ".txt", ".html"]
@@ -61,30 +60,30 @@ def post_process_with_llm(filepath: Path, original_filepath: Path) -> Path:
   )
 
   print(f"  Running LLM post-processing on {filepath.name}...", end="", flush=True)
-  try:
-    result = subprocess.run(
-      ["gemini", "--approval-mode", "auto_edit", "-p", full_prompt],
-      capture_output=True,
-      text=True,
-      check=False,
-      stdin=subprocess.DEVNULL,
-    )
-    if result.returncode != 0:
-      logging.info(f"Return Code: {result.returncode}")
-      logging.info(f"STDOUT:\n{result.stdout}")
-      logging.info(f"STDERR:\n{result.stderr}")
-    else:
-      logging.debug(f"Return Code: {result.returncode}")
-      logging.debug(f"STDOUT:\n{result.stdout}")
-      logging.debug(f"STDERR:\n{result.stderr}")
-  except FileNotFoundError:
-    print(" gemini CLI not found.")
+
+  response = run_gemini_cli_json(full_prompt, auto_edit=True)
+  if response.return_code != 0 and response.return_code != 127:
+    print(f" error running LLM (code {response.return_code})")
     return filepath
-  except Exception as e:
-    print(f" error running LLM: {e}")
+  elif response.return_code == 127:
     return filepath
 
-  match = re.search(r"<final_file>(.*?)</final_file>", result.stdout, re.DOTALL)
+  llm_output = response.text
+  session_id = response.session_id
+
+  match = re.search(r"<final_file>(.*?)</final_file>", llm_output, re.DOTALL)
+
+  if not match and session_id:
+    print(" (incomplete, asking to finish and rename)...", end="", flush=True)
+    recovery_prompt = "Please verify if all required tasks have been completed. You previously did not output the <final_file> tag for renaming. Please complete any missing tasks, and at the end of your response, output the path that should be renamed using the <final_file> format."
+
+    rec_response = run_gemini_cli_json(recovery_prompt, session_id=session_id, auto_edit=True)
+    if rec_response.return_code == 0:
+      llm_output = rec_response.text
+      match = re.search(r"<final_file>(.*?)</final_file>", llm_output, re.DOTALL)
+    else:
+      print(f" error recovering (code {rec_response.return_code})")
+
   if match:
     new_path_str = match.group(1).strip()
     new_path = Path(new_path_str)

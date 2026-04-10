@@ -18,7 +18,11 @@ You do not need to execute all of these for every entity. Just execute enough un
 3. **Identify Updates & New Pages**:
     - Which existing articles in `03_Wiki/` should be updated with this new information?
     - What new articles (people, projects, concepts, events, tools, etc.) should be created? 
-    - Follow the taxonomy for subdirectories: `people/`, `projects/`, `places/`, `events/`, `concepts/`, `tools/`, `philosophies/`, `patterns/`, `life/`, `eras/`, etc.
+    - Follow the taxonomy for subdirectories: `people/`, `projects/`, `places/`, `events/`, `concepts/`, `tools/`, `philosophies/`, `patterns/`, `life/`, `eras/`, etc. (You may also create new taxonomy directories that are not in this list.)
+    - **Anti-Duplication Rule**:
+        - Before creating a new article, explicitly check if an article for the exact same entity/concept already exists under a slightly different name.
+        - If an overlapping file exists, update the existing file instead of creating a second one.
+        - Enforce clear naming scopes: Avoid generic entity names for specialized records (e.g., use `[Person]-Health-Record.md` in `life/health/` and reserve `[Person].md` strictly for the `people/` directory).
     - **Anti-Thinning Rule (Stubs/Seeds Concept)**: 
         - Unless an entity is mentioned > 3 times in the raw data, or you can extract at least 3 non-obvious insights, do NOT create a separate page for it.
         - For simple mentions, link back to a parent page or general tech index (e.g., `wiki/stubs/`, `wiki/glossary.md`, or a broader topic).
@@ -28,7 +32,7 @@ You do not need to execute all of these for every entity. Just execute enough un
         - If you're adding a third paragraph about a sub-topic to an existing article, that sub-topic probably deserves its own page.
 4. **Update & Create Articles**:
     - **Update**: For existing articles, integrate the new information cohesively. Do not just append at the end. Maintain a Wikipedia-style tone (neutral, factual, concise, third-person).
-    - **Create**: For new articles, use the Wikipedia-style tone. Include YAML frontmatter:
+    - **Create**: For new articles, use the Wikipedia-style tone. Include YAML frontmatter (ensure tags are in **lower-case** format):
       ```yaml
       ---
       title: <Article Title>
@@ -53,8 +57,10 @@ You do not need to execute all of these for every entity. Just execute enough un
     - **Cross-Reference**: Use `[[wikilinks]]` to connect articles.
 5. **Update Index**:
     - Update `03_Wiki/_index.md` with new pages and descriptions.
+    - **CRITICAL**: Only maintain ONE `_index.md` file, located exactly at the root (`03_Wiki/_index.md`). Do NOT create `_index.md` files inside any subdirectories.
 
 ### Guidelines:
+- **Lower-case Tags**: Always use lower-case for tags (e.g., `["machine-learning"]`).
 - **Every entry must be absorbed.** Nothing is dropped.
 - **Synthesize, don't just copy.** Weave new facts into the existing fabric.
 - **Maintain Consistency.** Ensure names and concepts match across the wiki.

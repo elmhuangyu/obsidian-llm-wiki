@@ -43,7 +43,11 @@ def run() -> dict:
 
     if final_path:
       record_success(
-        filepath, state, status="ingested", output=str(final_path), date=datetime.date.today().isoformat()
+        filepath,
+        state,
+        status="ingested",
+        output=str(final_path),
+        date=datetime.date.today().isoformat(),
       )
       processed[filepath.name] = state[filepath.name]
       print(f"✓ Ingested: {filepath.name} -> {final_path.name}")
