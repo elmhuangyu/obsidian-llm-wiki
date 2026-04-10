@@ -1,0 +1,20 @@
+McPhail v Doulton.md:
+  output: 01_Raw/Entities/2026-04-08-mcphail-v-doulton-trust-law-case.md
+  path: Data/Cases/McPhail v Doulton.md
+  sha1: 63b2592574e2f1936c3b8a50457f3bf6ad10876d
+  status: ingested
+llm-wiki.md:
+  output: 01_Raw/Entities/2026-04-08-karpathy-llm-compounding-wiki-pattern.md
+  path: Data/Clippings/llm-wiki.md
+  sha1: 5281bf84b57f7444923740fbfc15402ef2b61c20
+  status: ingested
+local  private  secure LLM setup, April 2026.md:
+  output: 01_Raw/Entities/2026-04-08-vitalik-local-private-secure-llm-setup.md
+  path: Data/Clippings/local  private  secure LLM setup, April 2026.md
+  sha1: ab2ef5839050479f0e9786f5ea84cd4a5f19d484
+  status: ingested
+personal_wiki_skill.md:
+  output: 01_Raw/Entities/2026-04-08-personal-knowledge-wiki-skill-definition.md
+  path: Data/Clippings/personal_wiki_skill.md
+  sha1: 7180d66b4d8c43fe2e46f352349cce5286dbc3be
+  status: ingested
