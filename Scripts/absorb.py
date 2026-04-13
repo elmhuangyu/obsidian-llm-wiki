@@ -28,6 +28,7 @@ _SUPPORTED_EXTENSIONS = [".md"]
 _STATE_FILE = Path(".state/absorb_state.yaml")
 _PROMPT_FILE = Path("Scripts/prompts/absorb.md")
 _PLANNER_PROMPT_FILE = Path("Scripts/prompts/absorb_planner.md")
+_JOURNAL_BATCH_SIZE = 7
 
 
 def extract_frontmatter(filepath: Path) -> dict:
@@ -48,12 +49,23 @@ def plan_groups(pending: list[Path]) -> list[list[Path]]:
   if not pending:
     return []
 
+  journal_files = sorted([p for p in pending if "Journal" in p.parts])
+  other_pending = [p for p in pending if p not in journal_files]
+
+  groups = []
+  for i in range(0, len(journal_files), _JOURNAL_BATCH_SIZE):
+    groups.append(journal_files[i:i+_JOURNAL_BATCH_SIZE])
+
+  if not other_pending:
+    return groups
+
   if not _PLANNER_PROMPT_FILE.exists():
     print(f"Error: Prompt file {_PLANNER_PROMPT_FILE} not found.", file=sys.stderr)
-    return [[p] for p in pending]
+    groups.extend([[p] for p in other_pending])
+    return groups
 
   file_metadata = []
-  for p in pending:
+  for p in other_pending:
     fm = extract_frontmatter(p)
     file_metadata.append(
       {"filename": p.name, "tags": fm.get("tags", []), "summary": fm.get("summary", "")}
@@ -93,8 +105,7 @@ def plan_groups(pending: list[Path]) -> list[list[Path]]:
 
     grouped_filenames = json.loads(out_text)
 
-    paths_by_name = {p.name: p for p in pending}
-    groups = []
+    paths_by_name = {p.name: p for p in other_pending}
     for group in grouped_filenames:
       group_paths = [
         paths_by_name[name] for name in group if isinstance(name, str) and name in paths_by_name
@@ -103,8 +114,8 @@ def plan_groups(pending: list[Path]) -> list[list[Path]]:
         groups.append(group_paths)
 
     # Catch any missing files just in case
-    grouped_names = {p.name for group in groups for p in group}
-    for p in pending:
+    grouped_names = {p.name for pg in groups for p in pg}
+    for p in other_pending:
       if p.name not in grouped_names:
         groups.append([p])
 
@@ -112,7 +123,8 @@ def plan_groups(pending: list[Path]) -> list[list[Path]]:
 
   except Exception as e:
     logging.error(f"Planner error: {e}")
-    return [[p] for p in pending]
+    groups.extend([[p] for p in other_pending])
+    return groups
 
 
 def absorb_group(filepaths: list[Path]) -> bool:

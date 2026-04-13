@@ -75,7 +75,8 @@ def post_process_with_llm(filepath: Path, original_filepath: Path) -> Path:
 
   if not match and session_id:
     print(" (incomplete, asking to finish and rename)...", end="", flush=True)
-    recovery_prompt = "Please verify if all required tasks have been completed. You previously did not output the <final_file> tag for renaming. Please complete any missing tasks, and at the end of your response, output the path that should be renamed using the <final_file> format."
+    with open("Scripts/prompts/ingest_recovery.md", "r") as f:
+      recovery_prompt = f.read().strip()
 
     rec_response = run_gemini_cli_json(recovery_prompt, session_id=session_id, auto_edit=True)
     if rec_response.return_code == 0:

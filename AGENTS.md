@@ -20,24 +20,26 @@ This document outlines the purpose of each directory in the vault, following the
 
 Querying is the process of asking questions against the synthesized knowledge base (`03_Wiki/`). Instead of scanning raw notes, queries rely on the connections and compounding knowledge already built into the wiki.
 
-When searching for answers or exploring context, use the following approach:
+When searching for answers or exploring context, use the following tiered approach:
 
-### 1. Explore & Search
-Use the Obsidian CLI or built-in tools to locate entry points:
-- `obsidian tags`: View all available tags to find relevant categories.
-- `obsidian tag name=<tagname>`: Find all articles grouped under a specific tag.
-- `obsidian search:context query="<query>"`: Locate related articles and extract the immediate context lines surrounding the keyword.
-- `obsidian backlinks <file>`: Understand an entity's relationships by checking what other pages link to it.
+### 1. Consult the Map
+Always start by reading the main index file: `03_Wiki/_index.md`. This provides the curated structure and hierarchy of the knowledge base. Use it to identify the primary entry points for your query.
 
-### 2. Gather Context
-- Start by checking index pages (like `03_Wiki/_index.md`) to get a high-level map of concepts.
-- Choose and read 3–8 highly relevant articles based on your search. Follow `[[wikilinks]]` and check "related" sections.
+### 2. Deep Context Gathering
+- **Read Full Files**: Once you identify relevant articles from the index, read them in their entirety. Wiki entries are distilled knowledge and are designed to be understood as complete units.
+- **Follow Links**: Follow `[[wikilinks]]` within those articles to explore related concepts and dependencies.
 - **Strict Scope**: Querying focuses on `03_Wiki/`. Do not default to reading `01_Raw/` files unless specifically necessary, as the wiki contains the digested, canonical knowledge.
 
-### 3. Synthesize the Answer
+### 3. Advanced Discovery
+If the index and direct links do not provide sufficient information, use the `obsidian` CLI.
+- **Tags**: Use `obsidian tags` to view all available tags or `obsidian tag name=<tagname>` to find all articles grouped under a specific tag.
+- **Search**: Use `obsidian search:context query="<query>"` to locate related articles with immediate context, or `grep_search` and `glob` to locate specific keywords or patterns.
+- **Backlinks**: Use `obsidian backlinks <file>` to understand an entity's relationships by checking what other pages link *to* it.
+
+### 4. Synthesize the Answer
 - Connect the dots across multiple articles rather than just summarizing facts.
 - Cite the articles you reference using `[[wikilinks]]`.
 - Answer what the information *means*, recognizing themes, patterns, and tensions that surface in the vault.
 
-### 4. Compound the Knowledge
+### 5. Compound the Knowledge
 - If answering a query leads to a novel comparison, analysis, or previously unmapped connection, **save that insight back into the wiki**! Compile the answer into a new concept or pattern page so your explorations become permanent, searchable knowledge.

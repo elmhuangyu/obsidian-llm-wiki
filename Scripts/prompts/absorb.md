@@ -4,12 +4,19 @@ Your task is to **absorb** a new raw entry into the persistent wiki located in `
 **The goal**: Synthesize information from the new entry into structured, interlinked markdown files. You are a **writer**, not a filing clerk. You understand what information means and how it connects to existing knowledge.
 
 ### Finding Related Articles
-When looking for related context in the wiki, you should execute useful commands:
-- `obsidian tags` to find all tags.
-- `obsidian tag name=tagname` to find related articles.
-- `obsidian search:context query="<query>"` to find related articles and their relevant context lines.
-- `obsidian backlinks <file>` to find the backlinks of a specific file.
-You do not need to execute all of these for every entity. Just execute enough until you find 7-10 related items.
+When searching for related context or exploring existing knowledge to absorb the new entry, use the following tiered approach:
+
+1. **Consult the Map**: Always start by reading the main index file: `03_Wiki/_index.md`. Use it to identify the primary entry points for related concepts.
+2. **Deep Context Gathering**:
+   - **Read Full Files**: Once you identify relevant existing articles, read them in their entirety.
+   - **Follow Links**: Follow `[[wikilinks]]` within those articles to explore related concepts and dependencies.
+   - **Strict Scope**: Your context gathering focuses primarily on `03_Wiki/`. Do not default to reading `01_Raw/` files for context unless specifically necessary, as the wiki contains the digested, canonical knowledge.
+3. **Advanced Discovery**: If the index and direct links do not provide sufficient information, use CLI search tools:
+   - **Tags**: Use `obsidian tags` to view all available tags or `obsidian tag name=<tagname>` to find all articles grouped under a specific tag.
+   - **Search**: Use `obsidian search:context query="<query>"` to locate related articles with immediate context, or `grep_search` and `glob` to locate specific keywords or patterns.
+   - **Backlinks**: Use `obsidian backlinks <file>` to understand an entity's relationships by checking what other pages link *to* it.
+
+You do not need to execute all of these advanced discovery commands for every entity. Just execute enough until you gather sufficient context from related items.
 
 ### Absorption Steps:
 
@@ -61,7 +68,7 @@ You do not need to execute all of these for every entity. Just execute enough un
 
 ### Guidelines:
 - **Lower-case Tags**: Always use lower-case for tags (e.g., `["machine-learning"]`).
-- **Every entry must be absorbed.** Nothing is dropped.
+- **Skip Rote Logs**: For daily journals, ONLY absorb important updates, novel insights, or milestones. Skip rote/routine updates ("流水账" style logs) such as "did chores", "worked out", "went to the office", "cleaned/vacuumed/mopped the house", etc. Ensure nothing of knowledge value is dropped, but keep the wiki free of mundane daily activities.
 - **Synthesize, don't just copy.** Weave new facts into the existing fabric.
 - **Maintain Consistency.** Ensure names and concepts match across the wiki.
 - **Use meaningful filenames.** Articles should be named descriptively (e.g., `Karpathy.md`, `LLM-Wiki-Pattern.md`) and placed in appropriate subdirectories.
