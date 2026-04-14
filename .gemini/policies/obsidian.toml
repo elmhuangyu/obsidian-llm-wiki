@@ -1,5 +1,33 @@
+# forbid obsidian eval
 [[rule]]
 toolName = "run_shell_command"
-commandPrefix = "obsidian"
+commandPrefix = "obsidian eval"
+decision = "deny"
+priority = 999
+modes = ["plan", "default", "autoEdit", "yolo"]
+
+# allow activate_skill
+[[rule]]
+toolName = "activate_skill"
+decision = "allow"
+priority = 120
+modes = ["plan", "default", "autoEdit", "yolo"]
+interactive = false
+
+# allow obsidian readonly commands for all modes
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = "obsidian (aliases|backlinks|base:query|base:views|bases|bookmarks|daily:path|daily:read|deadends|file|files|folder|folders|links|orphans|outline|properties|property:read|read|search|search:context|tabs|tag|tags|tasks|unresolved|workspace)"
+decision = "allow"
+priority = 110
+modes = ["plan", "default", "autoEdit", "yolo"]
+interactive = false
+
+# allow obsidian write commands for autoEdit and yolo modes
+[[rule]]
+toolName = "run_shell_command"
+commandRegex = "obsidian (append|base:create|create|daily:append|daily:prepend|delete|move|prepend|property:remove|property:set|rename|task)"
 decision = "allow"
 priority = 100
+modes = ["autoEdit", "yolo"]
+interactive = false

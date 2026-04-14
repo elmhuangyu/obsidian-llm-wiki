@@ -1,8 +1,12 @@
 import json
 import logging
+import os
 import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
+
+NOTE_DIR = Path(__file__).resolve().parent.parent
 
 
 @dataclass
@@ -15,7 +19,8 @@ class GeminiResponse:
 def run_gemini_cli_json(
   prompt: str, session_id: Optional[str] = None, auto_edit: bool = False
 ) -> GeminiResponse:
-  cmd = ["gemini", "--output-format", "json"]
+  gemini_bin = os.path.expanduser("~/.npm/bin/gemini")
+  cmd = [gemini_bin, "--policy", ".gemini/policies/obsidian.toml", "--output-format", "json"]
   if auto_edit:
     cmd.extend(["--approval-mode", "auto_edit"])
   if session_id:
@@ -26,6 +31,7 @@ def run_gemini_cli_json(
   try:
     result = subprocess.run(
       cmd,
+      cwd=NOTE_DIR,
       capture_output=True,
       text=True,
       check=False,

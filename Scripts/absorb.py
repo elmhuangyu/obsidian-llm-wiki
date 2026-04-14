@@ -54,7 +54,7 @@ def plan_groups(pending: list[Path]) -> list[list[Path]]:
 
   groups = []
   for i in range(0, len(journal_files), _JOURNAL_BATCH_SIZE):
-    groups.append(journal_files[i:i+_JOURNAL_BATCH_SIZE])
+    groups.append(journal_files[i : i + _JOURNAL_BATCH_SIZE])
 
   if not other_pending:
     return groups

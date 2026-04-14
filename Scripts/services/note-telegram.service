@@ -1,0 +1,12 @@
+[Unit]
+Description=Note Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/chao/Documents/Note
+ExecStart=/usr/bin/uv run Scripts/telegram_bot.py
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

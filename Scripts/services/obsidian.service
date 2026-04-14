@@ -1,0 +1,14 @@
+[Unit]
+Description=Obsidian
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/electron39 /usr/lib/obsidian/app.asar
+Restart=on-failure
+Environment=DISPLAY=:0
+# You might need to add WAYLAND_DISPLAY=wayland-0 if using Wayland
+# Environment=WAYLAND_DISPLAY=wayland-0
+
+[Install]
+WantedBy=default.target

@@ -25,7 +25,11 @@ install-skills:
 		--skill json-canvas \
 		--skill obsidian-bases \
 		--skill obsidian-markdown \
+		--skill obsidian-cli \
 		-y -a gemini-cli
+
+install: install-skills
+	uv sync
 
 pyfmt:
 	uvx ruff check --select I --fix
