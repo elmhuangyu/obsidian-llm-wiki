@@ -6,7 +6,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from gemini_cli import run_gemini_cli_json
+from gemini_cli import ApprovalMode, run_gemini_cli_json
 from markitdown import MarkItDown
 
 _MARKITDOWN_EXTENSIONS = [".pdf", ".docx", ".pptx", ".xlsx", ".txt", ".html"]
@@ -61,7 +61,7 @@ def post_process_with_llm(filepath: Path, original_filepath: Path) -> Path:
 
   print(f"  Running LLM post-processing on {filepath.name}...", end="", flush=True)
 
-  response = run_gemini_cli_json(full_prompt, auto_edit=True)
+  response = run_gemini_cli_json(full_prompt, approval_mode=ApprovalMode.auto_edit)
   if response.return_code != 0 and response.return_code != 127:
     print(f" error running LLM (code {response.return_code})")
     return filepath
@@ -78,7 +78,9 @@ def post_process_with_llm(filepath: Path, original_filepath: Path) -> Path:
     with open("Scripts/prompts/ingest_recovery.md", "r") as f:
       recovery_prompt = f.read().strip()
 
-    rec_response = run_gemini_cli_json(recovery_prompt, session_id=session_id, auto_edit=True)
+    rec_response = run_gemini_cli_json(
+      recovery_prompt, session_id=session_id, approval_mode=ApprovalMode.auto_edit
+    )
     if rec_response.return_code == 0:
       llm_output = rec_response.text
       match = re.search(r"<final_file>(.*?)</final_file>", llm_output, re.DOTALL)

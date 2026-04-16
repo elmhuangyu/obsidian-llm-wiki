@@ -3,10 +3,27 @@ import logging
 import os
 import subprocess
 from dataclasses import dataclass
+from enum import StrEnum, auto
 from pathlib import Path
 from typing import Optional
 
 NOTE_DIR = Path(__file__).resolve().parent.parent
+
+
+class ApprovalMode(StrEnum):
+  plan = auto()
+  default = auto()
+  auto_edit = auto()
+  yolo = auto()
+
+
+class GeminiModel(StrEnum):
+  pro = "gemini-3.1-pro-preview"
+  flash = "gemini-3-flash-preview"
+  flash_lite = "gemini-3.1-flash-lite-preview"
+  gemini_25_pro = "gemini-2.5-pro"
+  gemini_25_flash = "gemini-2.5-flash"
+  gemini_25_flash_lite = "gemini-2.5-flash-lite"
 
 
 @dataclass
@@ -16,13 +33,39 @@ class GeminiResponse:
   return_code: int
 
 
-def run_gemini_cli_json(
-  prompt: str, session_id: Optional[str] = None, auto_edit: bool = False
-) -> GeminiResponse:
+def run_gemini_cli_json(prompt: str, **kwargs) -> GeminiResponse:
+  """Run the Gemini CLI in JSON output mode and return a structured response.
+
+  Invokes ``~/.npm/bin/gemini`` with ``--output-format json`` inside NOTE_DIR,
+  parses the JSON output, and surfaces the result as a :class:`GeminiResponse`.
+
+  Args:
+    prompt: The prompt string to pass via ``-p``.
+    **kwargs: Optional keyword arguments:
+
+      - **session_id** (*str | None*): Resume an existing conversation by its
+        session ID (passed as ``-r <id>``). Defaults to ``None``.
+      - **approval_mode** (:class:`ApprovalMode`): Controls how the CLI handles
+        tool-use approvals. Defaults to :attr:`ApprovalMode.default`.
+      - **model** (:class:`GeminiModel` | *str | None*): The model to use.
+        Defaults to ``None``.
+
+  Returns:
+    A :class:`GeminiResponse` with:
+
+    - ``text``: The ``response`` field from the JSON payload, or raw stdout on
+      parse failure.
+    - ``session_id``: The ``session_id`` returned by the CLI, if any.
+    - ``return_code``: The process exit code (``127`` if the binary is missing).
+  """
+  session_id: Optional[str] = kwargs.get("session_id")
+  approval_mode: ApprovalMode = kwargs.get("approval_mode", ApprovalMode.default)
+  model: Optional[GeminiModel | str] = kwargs.get("model")
   gemini_bin = os.path.expanduser("~/.npm/bin/gemini")
   cmd = [gemini_bin, "--policy", ".gemini/policies/obsidian.toml", "--output-format", "json"]
-  if auto_edit:
-    cmd.extend(["--approval-mode", "auto_edit"])
+  cmd.extend(["--approval-mode", str(approval_mode)])
+  if model:
+    cmd.extend(["-m", str(model)])
   if session_id:
     cmd.extend(["-r", session_id])
   if prompt:

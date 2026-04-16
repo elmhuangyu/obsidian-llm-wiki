@@ -10,6 +10,13 @@ The data ingestion and absorption processes are heavily automated using:
 - **`uv`**: Fast Python dependency and environment management.
 - **`gemini-cli`**: Used via our Python scripts to leverage LLM capabilities for text processing, categorization, and structuring.
 
+## Prerequisites
+
+- **`obsidian`**: Used for the notes.
+- **`gemini-cli`**: Used for the LLM.
+- **`ffmpeg`**: Used for audio processing.
+- **`llama-server`**: Used for ASR.
+
 ## Installation
 
 ```bash
@@ -43,4 +50,5 @@ A Telegram bot is available to interact with the wiki remotely. It allows you to
    systemctl --user daemon-reload
    systemctl --user enable --now obsidian.service
    systemctl --user enable --now note-telegram.service
+   systemctl --user enable --now llama-server-asr.service # require llama-server installed
    ```

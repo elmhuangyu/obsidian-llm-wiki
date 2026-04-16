@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 import yaml
-from gemini_cli import run_gemini_cli_json
+from gemini_cli import ApprovalMode, run_gemini_cli_json
 from state import (
   collect_candidates,
   find_pending,
@@ -85,7 +85,7 @@ def plan_groups(pending: list[Path]) -> list[list[Path]]:
 
   print("  Running Planner LLM to group files...", flush=True)
   try:
-    response = run_gemini_cli_json(full_prompt, auto_edit=False)
+    response = run_gemini_cli_json(full_prompt, approval_mode=ApprovalMode.default)
 
     if response.return_code != 0:
       logging.warning(
@@ -158,7 +158,7 @@ def absorb_group(filepaths: list[Path]) -> bool:
   names = ", ".join(p.name for p in filepaths)
   print(f"  Running LLM absorption for [{names}]...", end="", flush=True)
   try:
-    response = run_gemini_cli_json(full_prompt, auto_edit=True)
+    response = run_gemini_cli_json(full_prompt, approval_mode=ApprovalMode.auto_edit)
   except Exception as e:
     print(f" error running LLM: {e}")
     return False
